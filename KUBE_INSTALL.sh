@@ -74,11 +74,12 @@ apt-mark hold kubelet kubeadm kubectl
 kubeadm init --dry-run
 
 # kubeadm init
-# kubeadm init --pod-network-cidr = 192.168.0.0 / 16 -> pour calico
+# kubeadm init --pod-network-cidr=172.16.0.0/12 -> pour calico
 # kubeadm init --apiserver-cert-extra-sans home.dietz.dev -> pour avoir un DNS perso
+# kubeadm init --pod-network-cidr=172.16.0.0/12 --apiserver-cert-extra-sans home.dietz.dev
 
-# kubectl apply -f https://docs.projectcalico.org/v3.8/manifests/calico.yaml -> need  CIDR redéfinit
-# kubectl apply curl https://docs.projectcalico.org/manifests/calico.yaml -O
+# curl https://docs.projectcalico.org/manifests/calico.yaml -O
+# kubectl apply -f calico.yaml
 
 # kubectl taint nodes --all node-role.kubernetes.io/master-
 
@@ -93,6 +94,29 @@ kubeadm init --dry-run
 
 # http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
 
+cat <<EOF | kubectl apply -f -
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: admin-user
+  namespace: kubernetes-dashboard
+EOF
+
+cat <<EOF | kubectl apply -f -
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: admin-user
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: cluster-admin
+subjects:
+- kind: ServiceAccount
+  name: admin-user
+  namespace: kubernetes-dashboard
+EOF
+
 # Create token to add in configuration
-# TOKEN=$(kubectl -n kube-system describe secret default| awk '$1=="token:"{print $2}')
-# kubectl config set-credentials kubernetes-admin --token="${TOKEN}" -> replace kubernetes-admin with name in config
+TOKEN=$(kubectl -n kube-system describe secret default| awk '$1=="token:"{print $2}')
+kubectl config set-credentials kubernetes-admin --token="${TOKEN}" -> replace kubernetes-admin with name in config
