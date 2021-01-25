@@ -118,5 +118,5 @@ subjects:
 EOF
 
 # Create token to add in configuration
-TOKEN=$(kubectl -n kube-system describe secret default| awk '$1=="token:"{print $2}')
-kubectl config set-credentials kubernetes-admin --token="${TOKEN}" -> replace kubernetes-admin with name in config
+TOKEN=$(kubectl -n kubernetes-dashboard get secret $(kubectl -n kubernetes-dashboard get sa/admin-user -o jsonpath="{.secrets[0].name}") -o go-template="{{.data.token | base64decode}}")
+kubectl config set-credentials kubernetes-admin --token="${TOKEN}" # -> replace kubernetes-admin with name in config
